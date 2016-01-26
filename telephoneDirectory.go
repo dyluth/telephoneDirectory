@@ -8,10 +8,13 @@ import (
 
 func main() {
 	fmt.Println("starting a thing..")
-	StartServer()
+	c := make(chan int)
+	go StartServer(c)
+	<-c
 }
+	
+func StartServer(c chan int ) {
 
-func StartServer() {
 	//start the webserver listening on port 8084
 	//redirect to DirectoryServer
 	http.HandleFunc("/directory", DirectoryServer)
@@ -19,6 +22,7 @@ func StartServer() {
 	if err != nil {
 		fmt.Println("ListenAndServe: ", err)
 	}
+	c <- 1
 }
 
 func DirectoryServer(w http.ResponseWriter, req *http.Request) {
