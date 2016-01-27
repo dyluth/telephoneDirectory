@@ -1,5 +1,37 @@
 package main
 
+/*
+Acceptance criteria:
+
+	List all entries in the phone book.
+	Create a new entry to the phone book.
+	Remove an existing entry in the phone book.
+	Update an existing entry in the phone book.
+	Search for entries in the phone book by surname.
+
+A phone book entry must contain the following details:
+	Surname
+	Firstname
+	Phone number
+	Address (optional)
+
+Thoughts: 
+	How to uniquely identify a phonebook entry - duplicate names, addresses, - phone number should be unique.. so key off that.
+	create a PhoneBookEntry to look like url.Values - easy to encode / decode between places
+		need a validate mechanism - to ensure that th phonebookEntry has the right fields, no extras, (NOTE: Address is optional)
+	
+	Store this somehow.. possibly just an interface for the moment that records in memory - use a map for the moment
+		can replace that with real store later
+	need to be able to search on surname only
+		can use a dumb brute force search initially
+		
+	storing something new (create) and existing (replace) could have the same method, just if it already exists, throw away the previous one
+	removing something - should just be a map key removal
+	
+	list all entries - need a way to itentify that - some sort of "all" keyword in the POST?
+		
+*/
+
 import (
 	"fmt"
 	"io"
