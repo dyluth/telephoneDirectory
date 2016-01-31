@@ -52,12 +52,20 @@ import (
 	"testing"
 )
 
+/*
+this is needed to start the server in advance of the other tests being run.
+the server is started in parallel so that the process doesnt block indefinitely.
+*/
 func TestMain(t *testing.T) {
 	c := make(chan int)
 	go StartServer(c)
 
 }
 
+/*
+this is just a dumb test to make sure that the telephone directory returns page data correctly
+it also injects an element on the page to show that form data is correctly parsed.
+*/
 func TestServerEchoResponse(t *testing.T) {
 	testString := "test string - this should appear on the 2nd line"
 
@@ -86,6 +94,9 @@ func TestServerEchoResponse(t *testing.T) {
 	}
 }
 
+/*
+even dumber test - this just shows that a page response is created when we query it.
+*/
 func TestServer(t *testing.T) {
 	//c := make(chan int)
 	//go StartServer(c)
@@ -96,23 +107,62 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer response.Body.Close()
 	contents, err := ioutil.ReadAll(response.Body)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(contents[:])
-	fmt.Println("contents: ", s)
 
 	if !strings.HasPrefix(s, "ooh! Questions!") {
-		fmt.Println("did not get the expected response")
+		t.Log("did not get the expected response")
+		t.Log("contents: ", s)
 		t.FailNow()
 	}
 }
 
-/*
-func TestList(t *testing.T) {
-	fmt.Println("testing a thing..")
+//	TEST: List all entries in the phone book.
+//	TEST: Update an existing entry in the phone book.
+//	TEST: Remove an existing entry in the phone book.
+func TestListAll(t *testing.T) {
+
+	form := url.Values{}
+	//list all the entries
+
+	form.Add("query", "list") //list of "" will return everyone
+	str := sentTestRequest(form, t)
+	//get the slice of TelephoneEntries
+	te := LoadFronJSON(str) 
+	t.Log("list value: ", te)
+	t.FailNow() //TODO finish implementing this test!
+
+	//pick one and update it
+	//list all agian, confirm that the changes have been made
+	//pick one and remove it
+	//confirm that the removed one is not there,
+	//and the number returned is 1 less
+}
+
+func sentTestRequest(form url.Values, t *testing.T) string{
+	response, err := http.DefaultClient.PostForm("http://localhost:8084/directory", form)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	str := string(contents[:])
+	t.Log("contents: ", str)
+	return str
+}
+
+//	TEST: Create a new entry to the phone book.
+//	TEST: Search for entries in the phone book by surname to find this entry
+//	TEST: Search for entries in the phone book by surname to find an empty set of people
+func TestSearchCreate(t *testing.T) {
 	t.FailNow()
 }
-*/

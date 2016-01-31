@@ -6,6 +6,7 @@ this
 		{surname:"", firstname:"", phone_number:"", address=:""}
 */
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -27,5 +28,23 @@ func TestValidate(t *testing.T) {
 			t.Log("error! validating: ", key, " expected:", value, " got:", result)
 			t.Fail()
 		}
+	}
+}
+
+/*
+test the conversion to and from JSON
+*/
+func TestLoadFronJSON(t *testing.T) {
+	bilbo := TelephoneEntry{"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
+	js, _ := json.Marshal([]TelephoneEntry{bilbo})
+	jsString := string(js[:])
+	t.Log("marshalled entry: ", jsString)
+	te := LoadFronJSON(jsString)
+	if te[0] != bilbo {
+		t.Log("error! validating!")
+		t.Log(bilbo)
+		t.Log("is not Equal to: ")
+		t.Log(te[0])
+		t.Fail()
 	}
 }

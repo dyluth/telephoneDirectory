@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"regexp"
+	"strings"
 )
 
 /*
@@ -46,4 +50,40 @@ func Validate(e TelephoneEntry) bool {
 	}
 
 	return true
+}
+
+func LoadFronJSON(s string) []TelephoneEntry {
+	dec := json.NewDecoder(strings.NewReader(s))
+
+	//now create an array that big.
+	//TODO - use a variable length slice instead?
+	entries := []TelephoneEntry{}
+
+	// read open bracket
+	t, err := dec.Token()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%T: %v\n", t, t)
+
+	// while the array contains values
+	for i := 0; dec.More(); i++ {
+
+		// decode an array value (Message)
+		var m TelephoneEntry
+		err := dec.Decode(&m)
+		if err != nil {
+			log.Fatal(err)
+		}
+		entries = append(entries, m)
+		fmt.Printf("%v: %v\n", m.Surname, m.FirstName)
+	}
+
+	// read closing bracket
+	t, err = dec.Token()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return entries
 }
