@@ -12,19 +12,20 @@ import (
 func TestValidate(t *testing.T) {
 
 	validateTests := map[TelephoneEntry]bool{
-		TelephoneEntry{"smith", "bill", "1234567890", "1 road name, town name, city, postcode"}: true,
-		TelephoneEntry{"smith", "bill", "1234567890",""}:                                           true,
-		TelephoneEntry{"", "bill", "1234567890",""}:                                                false,
-		TelephoneEntry{"smith", "", "1234567890",""}:                                               false,
-		TelephoneEntry{"smith", "bill", "",""}:                                                     false,
+		TelephoneEntry{"smith", "bill", "1234567890", "1 road name, town name, city, postcode"}:     true,  //good - all optionals included
+		TelephoneEntry{"smith", "bill", " 1234 567 890 ", "1 road name, town name, city, postcode"}: true,  //good - valid phone_number spacing
+		TelephoneEntry{"smith", "bill", "1234567890", ""}:                                           true,  //good - ommiting address
+		TelephoneEntry{"", "bill", "1234567890", ""}:                                                false, //bad firstname - missing
+		TelephoneEntry{"smith", "", "1234567890", ""}:                                               false, //bad surname - missing
+		TelephoneEntry{"smith", "", "1234as56f7  890", ""}:                                          false, //bad phone number - letters
+		TelephoneEntry{"smith", "bill", "", ""}:                                                     false, //bad phone_number - missing
 	}
-	
+
 	for key, value := range validateTests {
-		result :=Validate(key)
+		result := Validate(key)
 		if value != result {
-			t.Log("error! validating: ",key, " expected:", value, " got:", result)
+			t.Log("error! validating: ", key, " expected:", value, " got:", result)
 			t.Fail()
 		}
 	}
-
 }
