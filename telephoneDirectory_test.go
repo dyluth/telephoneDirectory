@@ -23,7 +23,7 @@ A phone book entry must contain the following details:
 	Address (optional)
 
 	JSON Format of entry:
-		{surname = "", firstname="", phone_number="", Address=""}
+		{surname:"", firstname:"", phone_number:"", address:""}
 
 
 Thoughts:
@@ -50,8 +50,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-
-	//"bytes"
 )
 
 func TestMain(t *testing.T) {
