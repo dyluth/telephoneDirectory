@@ -21,7 +21,9 @@ It contians methods for encoding, decoding, and validating the entry with the fo
 		{surname:"", firstname:"", phone_number:"", address=:""}
 */
 
+
 type TelephoneEntry struct { //TODO make sure names are JSON compatible
+	UID			int    `json:"uid,omitempty"`	//defined by the server
 	Surname     string `json:"surname"`
 	FirstName   string `json:"firstName"`
 	PhoneNumber string `json:"phoneNumber"`
@@ -52,7 +54,7 @@ func Validate(e TelephoneEntry) bool {
 	return true
 }
 
-func LoadFronJSON(s string) []TelephoneEntry {
+func LoadArrayFromJSON(s string) []TelephoneEntry {
 	dec := json.NewDecoder(strings.NewReader(s))
 
 	//now create an array that big.
@@ -84,6 +86,14 @@ func LoadFronJSON(s string) []TelephoneEntry {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return entries
+}
+
+func LoadMapFromJSON(s []byte)  map[string]TelephoneEntry {
+
+	var entries  map[string]TelephoneEntry
+    json.Unmarshal(s, &entries)
 
 	return entries
 }

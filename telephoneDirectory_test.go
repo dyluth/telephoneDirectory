@@ -50,6 +50,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"encoding/json"
+	"strconv"
 )
 
 /*
@@ -130,22 +132,56 @@ func TestListAll(t *testing.T) {
 
 	form := url.Values{}
 	//list all the entries
-
-	form.Add("query", "list") //list of "" will return everyone
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", "*") //list of "" will return everyone
 	str := sentTestRequest(form, t)
-	//get the slice of TelephoneEntries
-	te := LoadFronJSON(str) 
+	//get the map of TelephoneEntries
+	
+	te := LoadMapFromJSON(str) 
 	t.Log("list value: ", te)
-	t.FailNow() //TODO finish implementing this test!
 
 	//pick one and update it
+	//just get an arbitrary entry
+	var random TelephoneEntry
+	for k := range te {
+	    random = te[k]
+	    break
+	}
+	updatedName := "Susan"
+	random.FirstName=updatedName
+	t.Log("entry set to Susan: ", random.UID)
+	form = url.Values{}
+	form.Add("query", "update") //list of "" will return everyone
+	js, _ := json.Marshal(random)
+	form.Add("update", string(js[:])) //send the command to update te[0] to have the name "susan"
+	str = sentTestRequest(form, t)
+	t.Log("update to susan request: ", string(str[:]))
+
 	//list all agian, confirm that the changes have been made
+	form = url.Values{}
+	//list all the entries
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", "*") //list of "" will return everyone
+	str = sentTestRequest(form, t)
+	//get the map of TelephoneEntries
+	te2 := LoadMapFromJSON(str) 
+	retrievedName 	 :=te2[strconv.Itoa(random.UID)].FirstName
+	
+	t.Log("this had bettter be ",updatedName," : ",retrievedName)
+		
+	if updatedName != retrievedName {
+		t.Error("name not changed from ", retrievedName, " to ", updatedName)
+		t.FailNow()
+	} 
+	
+
 	//pick one and remove it
 	//confirm that the removed one is not there,
 	//and the number returned is 1 less
+	//t.FailNow() //TODO finish implementing this test!
 }
 
-func sentTestRequest(form url.Values, t *testing.T) string{
+func sentTestRequest(form url.Values, t *testing.T) []byte{
 	response, err := http.DefaultClient.PostForm("http://localhost:8084/directory", form)
 	if err != nil {
 		t.Fatal(err)
@@ -155,9 +191,8 @@ func sentTestRequest(form url.Values, t *testing.T) string{
 	if err != nil {
 		t.Fatal(err)
 	}
-	str := string(contents[:])
-	t.Log("contents: ", str)
-	return str
+	t.Log("contents: ", string(contents[:]))
+	return contents
 }
 
 //	TEST: Create a new entry to the phone book.

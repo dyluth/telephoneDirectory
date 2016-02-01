@@ -33,16 +33,17 @@ Thoughts:
 */
 
 import (
-	"container/list"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 //TODO - replace this with a real backend object store
 //for the time being a map will be sufficient to show it's working
-var datastore list.List
+var datastore map[string]TelephoneEntry
+var datastoreCount int =137
 
 func main() {
 	fmt.Println("starting a thing..")
@@ -51,11 +52,32 @@ func main() {
 	<-c
 }
 
+/*
+convenience method to keep the key in sync with the UID field in the telephoneEntry
+*/
+func addDatastoreEntry(te TelephoneEntry) {
+	te.UID=datastoreCount
+	datastore[strconv.Itoa(datastoreCount)] = te
+	datastoreCount++
+}
+
+func listDatastoreEntries() []TelephoneEntry {
+	
+	entries := make([]TelephoneEntry, 0, len(datastore))
+	
+	for k := range datastore {
+	    entries = append(entries, datastore[k])
+	}
+	return entries
+}
+
 func StartServer(c chan int) {
 
-	datastore := list.New()
+	datastore = make(map[string]TelephoneEntry)
+	addDatastoreEntry(TelephoneEntry{0,"smith", "bill", "1234567890", "1 road name, town name, city, postcode"})
+	addDatastoreEntry(TelephoneEntry{0,"smith", "ben", "987654321", "2 road name, town name, city, postcode"})
+	addDatastoreEntry(TelephoneEntry{0,"baggins", "ben", "987654321", "2 road name, town name, city, postcode"})
 	//create some default values in the datastore
-	datastore.PushFront(TelephoneEntry{"smith", "bill", "1234567890", "1 road name, town name, city, postcode"})
 
 	//start the webserver listening on port 8084
 	//redirect to DirectoryServer
@@ -75,30 +97,36 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 
 	//pull out the query:
 	req.ParseForm()
-	query := req.PostFormValue("query")
+	command := req.PostFormValue("command")
 
 	//switch on the query to see what we need to provide.. and get it!
-	switch query {
+	switch command {
 	case "list":
 		//if "sirname" field persent, return just that ket in an array
 		//else return whole directory set
 		//add a hardcoded response for now:
-		js, _ := json.Marshal([]TelephoneEntry{
-			TelephoneEntry{"smith", "bill", "1234567890", "1 road name, town name, city, postcode"},
-			TelephoneEntry{"smith", "ben", "1234567890", "1 road name, town name, city, postcode"}})
+		
+		js, err := json.Marshal(datastore)
+		if err != nil {
+			fmt.Println("ERROR, marsheling: ",err.Error())
+			return
+		}
 		w.Write(js)
-		fmt.Println("added to header: ", js)
+		break
 	case "create":
-		fmt.Println("number 5")
 		//the object should not already exist - if it does return an error
 		//now just flow into update case, as the rest is the same
 	case "update":
 		//replace an existing entry with a new one
+		
+		//now look for "update" - it should contain the JSON to describe the updared person
+		
+		//once found, simply replace the original with the new one.. 
+		break
 	case "remove":
 		//the object should already exist - if not return an error
 		//remove the object from the datastore
-
-	//case i>7: fmt.Println("is > 7") //will be compile error as type int and bool don't match between case and switch
+		break
 	default:
 		io.WriteString(w, "ooh! Questions!\n")
 		//io.WriteString(w, req.Method) //eg "GET"

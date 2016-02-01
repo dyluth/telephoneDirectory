@@ -13,13 +13,13 @@ import (
 func TestValidate(t *testing.T) {
 
 	validateTests := map[TelephoneEntry]bool{
-		TelephoneEntry{"smith", "bill", "1234567890", "1 road name, town name, city, postcode"}:     true,  //good - all optionals included
-		TelephoneEntry{"smith", "bill", " 1234 567 890 ", "1 road name, town name, city, postcode"}: true,  //good - valid phone_number spacing
-		TelephoneEntry{"smith", "bill", "1234567890", ""}:                                           true,  //good - ommiting address
-		TelephoneEntry{"", "bill", "1234567890", ""}:                                                false, //bad firstname - missing
-		TelephoneEntry{"smith", "", "1234567890", ""}:                                               false, //bad surname - missing
-		TelephoneEntry{"smith", "", "1234as56f7  890", ""}:                                          false, //bad phone number - letters
-		TelephoneEntry{"smith", "bill", "", ""}:                                                     false, //bad phone_number - missing
+		TelephoneEntry{0,"smith", "bill", "1234567890", "1 road name, town name, city, postcode"}:     true,  //good - all optionals included
+		TelephoneEntry{0,"smith", "bill", " 1234 567 890 ", "1 road name, town name, city, postcode"}: true,  //good - valid phone_number spacing
+		TelephoneEntry{0,"smith", "bill", "1234567890", ""}:                                           true,  //good - ommiting address
+		TelephoneEntry{0,"", "bill", "1234567890", ""}:                                                false, //bad firstname - missing
+		TelephoneEntry{0,"smith", "", "1234567890", ""}:                                               false, //bad surname - missing
+		TelephoneEntry{0,"smith", "", "1234as56f7  890", ""}:                                          false, //bad phone number - letters
+		TelephoneEntry{0,"smith", "bill", "", ""}:                                                     false, //bad phone_number - missing
 	}
 
 	for key, value := range validateTests {
@@ -35,11 +35,11 @@ func TestValidate(t *testing.T) {
 test the conversion to and from JSON
 */
 func TestLoadFronJSON(t *testing.T) {
-	bilbo := TelephoneEntry{"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
+	bilbo := TelephoneEntry{2,"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
 	js, _ := json.Marshal([]TelephoneEntry{bilbo})
 	jsString := string(js[:])
 	t.Log("marshalled entry: ", jsString)
-	te := LoadFronJSON(jsString)
+	te := LoadArrayFromJSON(jsString)
 	if te[0] != bilbo {
 		t.Log("error! validating!")
 		t.Log(bilbo)
