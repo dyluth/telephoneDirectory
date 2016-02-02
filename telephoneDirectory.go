@@ -99,6 +99,8 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	command := req.PostFormValue("command")
 
+	fmt.Println("command: ",command)
+
 	//switch on the query to see what we need to provide.. and get it!
 	switch command {
 	case "list":
@@ -116,12 +118,25 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 	case "create":
 		//the object should not already exist - if it does return an error
 		//now just flow into update case, as the rest is the same
+		
+		break
 	case "update":
 		//replace an existing entry with a new one
-		
 		//now look for "update" - it should contain the JSON to describe the updared person
+		entryString := req.PostFormValue("update")
+		//check to make sure that it exists
+		entry := LoadFromJSON([]byte(entryString))
 		
-		//once found, simply replace the original with the new one.. 
+		fmt.Println("entry string: ", entryString)
+		
+		if _, present :=datastore[strconv.Itoa(entry.UID)]; !present {
+			//return an error if it does not exist (present will be false)
+			fmt.Println("entry doesnt exist!  ")
+			w.WriteHeader(400)
+			return
+		}
+		//once found, simply replace the original with the new one..
+		datastore[strconv.Itoa(entry.UID)]=entry 		
 		break
 	case "remove":
 		//the object should already exist - if not return an error

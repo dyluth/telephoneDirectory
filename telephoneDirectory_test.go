@@ -134,7 +134,7 @@ func TestListAll(t *testing.T) {
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
 	form.Add("list", "*") //list of "" will return everyone
-	str := sentTestRequest(form, t)
+	str,_ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 	
 	te := LoadMapFromJSON(str) 
@@ -149,12 +149,12 @@ func TestListAll(t *testing.T) {
 	}
 	updatedName := "Susan"
 	random.FirstName=updatedName
-	t.Log("entry set to Susan: ", random.UID)
+	t.Log("entry set to ",updatedName,": ", random.UID)
 	form = url.Values{}
-	form.Add("query", "update") //list of "" will return everyone
+	form.Add("command", "update") //list of "" will return everyone
 	js, _ := json.Marshal(random)
 	form.Add("update", string(js[:])) //send the command to update te[0] to have the name "susan"
-	str = sentTestRequest(form, t)
+	str,_ = sentTestRequest(form, t)
 	t.Log("update to susan request: ", string(str[:]))
 
 	//list all agian, confirm that the changes have been made
@@ -162,7 +162,7 @@ func TestListAll(t *testing.T) {
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
 	form.Add("list", "*") //list of "" will return everyone
-	str = sentTestRequest(form, t)
+	str,_ = sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 	te2 := LoadMapFromJSON(str) 
 	retrievedName 	 :=te2[strconv.Itoa(random.UID)].FirstName
@@ -181,8 +181,22 @@ func TestListAll(t *testing.T) {
 	//t.FailNow() //TODO finish implementing this test!
 }
 
-func sentTestRequest(form url.Values, t *testing.T) []byte{
+//test try to update an entry that doesnt exist - should fail
+func TestUpdateMissingEntry(t *testing.T) {
+	form := url.Values{}
+	form.Add("command", "update") //update - try to update an existing one.. but where that doesnt exist - should fail	
+	js, _ := json.Marshal(TelephoneEntry{2,"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"})
+	form.Add("update", string(js[:])) 
+	_,code := sentTestRequest(form, t)	
+	if(code == 200 ) {
+		t.Error("ERROR got 'OK 200' from request to update non existing object ")
+		t.FailNow()
+	}
+}
+
+func sentTestRequest(form url.Values, t *testing.T) ([]byte, int){
 	response, err := http.DefaultClient.PostForm("http://localhost:8084/directory", form)
+			
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,8 +205,8 @@ func sentTestRequest(form url.Values, t *testing.T) []byte{
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("contents: ", string(contents[:]))
-	return contents
+	t.Log("contents: ", string(contents[:]), " code: ", response.StatusCode)
+	return contents, response.StatusCode
 }
 
 //	TEST: Create a new entry to the phone book.

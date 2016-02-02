@@ -34,7 +34,7 @@ func TestValidate(t *testing.T) {
 /*
 test the conversion to and from JSON
 */
-func TestLoadFronJSON(t *testing.T) {
+func TestLoadArrayFronJSON(t *testing.T) {
 	bilbo := TelephoneEntry{2,"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
 	js, _ := json.Marshal([]TelephoneEntry{bilbo})
 	jsString := string(js[:])
@@ -47,4 +47,19 @@ func TestLoadFronJSON(t *testing.T) {
 		t.Log(te[0])
 		t.Fail()
 	}
+}
+
+func testLoadFromJSON(t *testing.T) {
+	orig := TelephoneEntry{0,"smith", "bill", "1234567890", "1 road name, town name, city, postcode"}
+	js, _ := json.Marshal(orig)
+	newOne := LoadFromJSON(js)
+	
+	if orig!=newOne {
+		t.Log("error! validating!")
+		t.Log(orig)
+		t.Log("is not the same as translation: ")
+		t.Log(newOne)
+		t.Fail()
+	}
+	
 }

@@ -97,3 +97,11 @@ func LoadMapFromJSON(s []byte)  map[string]TelephoneEntry {
 
 	return entries
 }
+
+func LoadFromJSON(s []byte)  TelephoneEntry {
+
+	var entry TelephoneEntry
+    json.Unmarshal(s, &entry)
+
+	return entry
+}
