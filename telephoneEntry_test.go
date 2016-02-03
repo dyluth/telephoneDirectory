@@ -38,7 +38,7 @@ func TestLoadArrayFronJSON(t *testing.T) {
 	bilbo := TelephoneEntry{2,"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
 	js, _ := json.Marshal([]TelephoneEntry{bilbo})
 	jsString := string(js[:])
-	t.Log("marshalled entry: ", jsString)
+	//t.Log("marshalled entry: ", jsString)
 	te := LoadArrayFromJSON(jsString)
 	if te[0] != bilbo {
 		t.Log("error! validating!")

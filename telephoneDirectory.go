@@ -43,7 +43,7 @@ import (
 //TODO - replace this with a real backend object store
 //for the time being a map will be sufficient to show it's working
 var datastore map[string]TelephoneEntry
-var datastoreCount int =137
+var datastoreCount int = 137
 
 func main() {
 	fmt.Println("starting a thing..")
@@ -56,17 +56,17 @@ func main() {
 convenience method to keep the key in sync with the UID field in the telephoneEntry
 */
 func addDatastoreEntry(te TelephoneEntry) {
-	te.UID=datastoreCount
+	te.UID = datastoreCount
 	datastore[strconv.Itoa(datastoreCount)] = te
 	datastoreCount++
 }
 
 func listDatastoreEntries() []TelephoneEntry {
-	
+
 	entries := make([]TelephoneEntry, 0, len(datastore))
-	
+
 	for k := range datastore {
-	    entries = append(entries, datastore[k])
+		entries = append(entries, datastore[k])
 	}
 	return entries
 }
@@ -74,9 +74,9 @@ func listDatastoreEntries() []TelephoneEntry {
 func StartServer(c chan int) {
 
 	datastore = make(map[string]TelephoneEntry)
-	addDatastoreEntry(TelephoneEntry{0,"smith", "bill", "1234567890", "1 road name, town name, city, postcode"})
-	addDatastoreEntry(TelephoneEntry{0,"smith", "ben", "987654321", "2 road name, town name, city, postcode"})
-	addDatastoreEntry(TelephoneEntry{0,"baggins", "ben", "987654321", "2 road name, town name, city, postcode"})
+	addDatastoreEntry(TelephoneEntry{0, "smith", "bill", "1234567890", "1 road name, town name, city, postcode"})
+	addDatastoreEntry(TelephoneEntry{0, "smith", "ben", "987654321", "2 road name, town name, city, postcode"})
+	addDatastoreEntry(TelephoneEntry{0, "baggins", "ben", "987654321", "2 road name, town name, city, postcode"})
 	//create some default values in the datastore
 
 	//start the webserver listening on port 8084
@@ -99,7 +99,7 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	command := req.PostFormValue("command")
 
-	fmt.Println("command: ",command)
+	//fmt.Println("command: ", command)
 
 	//switch on the query to see what we need to provide.. and get it!
 	switch command {
@@ -107,10 +107,10 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		//if "sirname" field persent, return just that ket in an array
 		//else return whole directory set
 		//add a hardcoded response for now:
-		
+
 		js, err := json.Marshal(datastore)
 		if err != nil {
-			fmt.Println("ERROR, marsheling: ",err.Error())
+			fmt.Println("ERROR, marsheling: ", err.Error())
 			return
 		}
 		w.Write(js)
@@ -118,7 +118,7 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 	case "create":
 		//the object should not already exist - if it does return an error
 		//now just flow into update case, as the rest is the same
-		
+
 		break
 	case "update":
 		//replace an existing entry with a new one
@@ -126,10 +126,10 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		entryString := req.PostFormValue("update")
 		//check to make sure that it exists
 		entry := LoadFromJSON([]byte(entryString))
-		
+
 		//fmt.Println("entry string: ", entryString)
-		
-		if _, present :=datastore[strconv.Itoa(entry.UID)]; !present {
+
+		if _, present := datastore[strconv.Itoa(entry.UID)]; !present {
 			//return an error if it does not exist (present will be false)
 			//fmt.Println("entry doesnt exist!  ")
 			w.WriteHeader(400)
@@ -137,14 +137,24 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		}
 		//once found, simply replace the original with the new one..
 		//fmt.Println("loaded ", datastore[strconv.Itoa(entry.UID)])
-		datastore[strconv.Itoa(entry.UID)]=entry 
+		datastore[strconv.Itoa(entry.UID)] = entry
 		//fmt.Println("updated? ", datastore[strconv.Itoa(entry.UID)])
-			
+
 		break
 	case "remove":
 		//specify just the ID in a string
 		//the object should already exist - if not return an error
 		//remove the object from the datastore
+		keyToRemove := req.PostFormValue("remove")
+
+		if _, present := datastore[keyToRemove]; !present {
+			//return an error if it does not exist (present will be false)
+			w.WriteHeader(400)
+			return
+		}
+
+		delete(datastore, keyToRemove)
+		
 		break
 	default:
 		io.WriteString(w, "ooh! Questions!\n")

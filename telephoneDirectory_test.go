@@ -180,8 +180,51 @@ func TestListAll(t *testing.T) {
 	//and the number returned is 1 less
 	//t.FailNow() //TODO finish implementing this test!
 func TestRemoveEntry(t *testing.T) {
-	t.Error("ERROR: Test not implemented yet! ")
-	t.FailNow()
+	
+	form := url.Values{}
+	//list all the entries
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", "*") //list of "" will return everyone
+	str,_ := sentTestRequest(form, t)
+	//get the map of TelephoneEntries
+	
+	te := LoadMapFromJSON(str) 
+	t.Log("list value: ", te)
+
+	//pick one and update it
+	//just get an arbitrary entry
+	var random TelephoneEntry
+	for k := range te {
+	    random = te[k]
+	    break
+	}
+	
+	form = url.Values{}
+	//list all the entries
+	form.Add("command", "remove")  //tell it that we want to remove something
+	form.Add("remove", strconv.Itoa(random.UID)) //fill in the remove field here
+	_,code := sentTestRequest(form, t)	
+	if code != 200  {
+		t.Error("ERROR did not get 'OK 200' from request to remove object.  Code: ",code)
+		t.FailNow()
+	}
+	
+	//now list all to make sure that it has been removed
+	form = url.Values{}
+	//list all the entries
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", "*") //list of "" will return everyone
+	str,_ = sentTestRequest(form, t)
+	te = LoadMapFromJSON(str) 
+	t.Log("list value: ", te)	
+	for k := range te {
+		//check to see if the ID of every Entry returned is the one we have deleted
+	    if te[k].UID == random.UID  {
+	    	//if it is, then the item wasnt really deleted, so fail the test
+			t.Error("ERROR: The item ", random.UID, " was NOT deleted as we asked :( " )
+			t.FailNow()	    	
+	    }
+	}
 }	
 
 //try to remove an entry that doesnt exist
