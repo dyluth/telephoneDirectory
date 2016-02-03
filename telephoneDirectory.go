@@ -116,8 +116,12 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		w.Write(js)
 		break
 	case "create":
-		//the object should not already exist - if it does return an error
-		//now just flow into update case, as the rest is the same
+		//this will create a new entry in the database with a new key
+		//if there are 2 identical items added to the DB, they wiull be differentiated by their UIDs
+		entryString := req.PostFormValue("create")
+		//check to make sure that it exists
+		entry := LoadFromJSON([]byte(entryString))
+		addDatastoreEntry(entry)
 
 		break
 	case "update":

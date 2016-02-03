@@ -132,8 +132,8 @@ func TestListAll(t *testing.T) {
 
 	form := url.Values{}
 	//list all the entries
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*")       //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
 	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 
@@ -160,8 +160,8 @@ func TestListAll(t *testing.T) {
 	//list all agian, confirm that the changes have been made
 	form = url.Values{}
 	//list all the entries
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*")       //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
 	str, _ = sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 	te2 := LoadMapFromJSON(str)
@@ -183,8 +183,8 @@ func TestRemoveEntry(t *testing.T) {
 
 	form := url.Values{}
 	//list all the entries
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*")       //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
 	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 
@@ -212,8 +212,8 @@ func TestRemoveEntry(t *testing.T) {
 	//now list all to make sure that it has been removed
 	form = url.Values{}
 	//list all the entries
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*")       //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
 	str, _ = sentTestRequest(form, t)
 	te = LoadMapFromJSON(str)
 	t.Log("list value: ", te)
@@ -243,8 +243,8 @@ func TestCreateEntry(t *testing.T) {
 
 	//check to see that it really is there!
 	form = url.Values{}
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*")       //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
 	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 	te := LoadMapFromJSON(str)
@@ -267,12 +267,23 @@ func TestCreateEntry(t *testing.T) {
 
 func TestListBySurname(t *testing.T) {
 	//list all entres with "surname":"smith"
+	surname := "smith"
+	form := url.Values{}
+	//list all the entries
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", surname)   //list of "" will return everyone
+	str, _ := sentTestRequest(form, t)
+	//get the map of TelephoneEntries
 
+	te := LoadMapFromJSON(str)
 	//make sure that all the entries returned have that surname
-
-	//create 2 more entries with surname "smith"
-
-	//now query for just that surname and make sure that the new ones are there
+	for k := range te {
+		if te[k].Surname != surname {
+			t.Error("ERROR: asked for entries of surname: ", surname, " got: ", te[k])
+			t.FailNow()
+			break
+		}
+	}
 
 	t.Error("ERROR: not implemented! ")
 	t.FailNow()
@@ -320,10 +331,40 @@ func sentTestRequest(form url.Values, t *testing.T) ([]byte, int) {
 	return contents, response.StatusCode
 }
 
-//	TEST: Create a new entry to the phone book.
-//	TEST: Search for entries in the phone book by surname to find this entry
 //	TEST: Search for entries in the phone book by surname to find an empty set of people
-func TestSearchCreate(t *testing.T) {
-	t.Error("ERROR not implemented!")
-	t.FailNow()
+func TestSearchEmpty(t *testing.T) {
+	//no-one likes gollum, so he had his name removed from the phonebook
+	surname := "gollum"
+	form := url.Values{}
+	//list all the entries
+	form.Add("command", "list")
+	form.Add("list", surname) //list of "*" will return everyone
+	str, _ := sentTestRequest(form, t)
+	//get the map of TelephoneEntries
+	te := LoadMapFromJSON(str)
+
+	if len(te) > 0 {
+		t.Error("ERROR we looked for an entry that should not be in the directory: ", surname, " but was returned: ", te)
+		t.FailNow()
+	}
+}
+
+func TestDirectoryIDsConsistent(t *testing.T) {
+	//list all entres and make sure their keys are the same as UIDs
+	form := url.Values{}
+	//list all the entries
+	form.Add("command", "list")
+	form.Add("list", "*") //list of "*" will return everyone
+	str, _ := sentTestRequest(form, t)
+	//get the map of TelephoneEntries
+
+	te := LoadMapFromJSON(str)
+	//make sure that all the entries returned have that surname
+	for k := range te {
+		if strconv.Itoa(te[k].UID) != k {
+			t.Error("ERROR: key ", k, " doesnt match UID in entry: ", te[k])
+			t.FailNow()
+			break
+		}
+	}
 }
