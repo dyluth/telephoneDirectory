@@ -44,14 +44,14 @@ Thoughts:
 */
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
-	"encoding/json"
-	"strconv"
 )
 
 /*
@@ -118,7 +118,7 @@ func TestServer(t *testing.T) {
 	}
 	s := string(contents[:])
 
-	if !strings.HasPrefix(s, "ooh! Questions!") {
+	if !strings.HasPrefix(s, "ooh! we didnt get any questions!") {
 		t.Log("did not get the expected response")
 		t.Log("contents: ", s)
 		t.FailNow()
@@ -133,131 +133,181 @@ func TestListAll(t *testing.T) {
 	form := url.Values{}
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*") //list of "" will return everyone
-	str,_ := sentTestRequest(form, t)
+	form.Add("list", "*")       //list of "" will return everyone
+	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
-	
-	te := LoadMapFromJSON(str) 
+
+	te := LoadMapFromJSON(str)
 	t.Log("list value: ", te)
 
 	//pick one and update it
 	//just get an arbitrary entry
 	var random TelephoneEntry
 	for k := range te {
-	    random = te[k]
-	    break
+		random = te[k]
+		break
 	}
 	updatedName := "Susan"
-	random.FirstName=updatedName
-	t.Log("entry set to ",updatedName,": ", random.UID)
+	random.FirstName = updatedName
+	t.Log("entry set to ", updatedName, ": ", random.UID)
 	form = url.Values{}
 	form.Add("command", "update") //list of "" will return everyone
 	js, _ := json.Marshal(random)
 	form.Add("update", string(js[:])) //send the command to update te[0] to have the name "susan"
-	str,_ = sentTestRequest(form, t)
+	str, _ = sentTestRequest(form, t)
 	t.Log("update to susan request: ", string(str[:]))
 
 	//list all agian, confirm that the changes have been made
 	form = url.Values{}
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*") //list of "" will return everyone
-	str,_ = sentTestRequest(form, t)
+	form.Add("list", "*")       //list of "" will return everyone
+	str, _ = sentTestRequest(form, t)
 	//get the map of TelephoneEntries
-	te2 := LoadMapFromJSON(str) 
-	retrievedName 	 :=te2[strconv.Itoa(random.UID)].FirstName
-	
-	t.Log("this had bettter be ",updatedName," : ",retrievedName)
-		
+	te2 := LoadMapFromJSON(str)
+	retrievedName := te2[strconv.Itoa(random.UID)].FirstName
+
+	t.Log("this had bettter be ", updatedName, " : ", retrievedName)
+
 	if updatedName != retrievedName {
 		t.Error("name not changed from ", retrievedName, " to ", updatedName)
 		t.FailNow()
-	} 	
+	}
 }
 
-	//pick one and remove it
-	//confirm that the removed one is not there,
-	//and the number returned is 1 less
-	//t.FailNow() //TODO finish implementing this test!
+//pick one and remove it
+//confirm that the removed one is not there,
+//and the number returned is 1 less
+//t.FailNow() //TODO finish implementing this test!
 func TestRemoveEntry(t *testing.T) {
-	
+
 	form := url.Values{}
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*") //list of "" will return everyone
-	str,_ := sentTestRequest(form, t)
+	form.Add("list", "*")       //list of "" will return everyone
+	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
-	
-	te := LoadMapFromJSON(str) 
+
+	te := LoadMapFromJSON(str)
 	t.Log("list value: ", te)
 
 	//pick one and update it
 	//just get an arbitrary entry
 	var random TelephoneEntry
 	for k := range te {
-	    random = te[k]
-	    break
+		random = te[k]
+		break
 	}
-	
+
 	form = url.Values{}
 	//list all the entries
-	form.Add("command", "remove")  //tell it that we want to remove something
+	form.Add("command", "remove")                //tell it that we want to remove something
 	form.Add("remove", strconv.Itoa(random.UID)) //fill in the remove field here
-	_,code := sentTestRequest(form, t)	
-	if code != 200  {
-		t.Error("ERROR did not get 'OK 200' from request to remove object.  Code: ",code)
+	_, code := sentTestRequest(form, t)
+	if code != 200 {
+		t.Error("ERROR did not get 'OK 200' from request to remove object.  Code: ", code)
 		t.FailNow()
 	}
-	
+
 	//now list all to make sure that it has been removed
 	form = url.Values{}
 	//list all the entries
 	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", "*") //list of "" will return everyone
-	str,_ = sentTestRequest(form, t)
-	te = LoadMapFromJSON(str) 
-	t.Log("list value: ", te)	
+	form.Add("list", "*")       //list of "" will return everyone
+	str, _ = sentTestRequest(form, t)
+	te = LoadMapFromJSON(str)
+	t.Log("list value: ", te)
 	for k := range te {
 		//check to see if the ID of every Entry returned is the one we have deleted
-	    if te[k].UID == random.UID  {
-	    	//if it is, then the item wasnt really deleted, so fail the test
-			t.Error("ERROR: The item ", random.UID, " was NOT deleted as we asked :( " )
-			t.FailNow()	    	
-	    }
+		if te[k].UID == random.UID {
+			//if it is, then the item wasnt really deleted, so fail the test
+			t.Error("ERROR: The item ", random.UID, " was NOT deleted as we asked :( ")
+			t.FailNow()
+		}
 	}
-}	
+}
+
+func TestCreateEntry(t *testing.T) {
+	//create a new entry
+	form := url.Values{}
+	form.Add("command", "create")
+
+	gimli := TelephoneEntry{0, "son of Gloin", "gimli", "10101010101", "3, Dwarrowdelf, Under the Mountain, The Misty Mountains"}
+	js, _ := json.Marshal(gimli)
+	form.Add("create", string(js[:]))
+	_, code := sentTestRequest(form, t)
+	if code != 200 {
+		t.Error("ERROR got non-200 return code: ", code)
+		t.FailNow()
+	}
+
+	//check to see that it really is there!
+	form = url.Values{}
+	form.Add("command", "list") //list of "" will return everyone
+	form.Add("list", "*")       //list of "" will return everyone
+	str, _ := sentTestRequest(form, t)
+	//get the map of TelephoneEntries
+	te := LoadMapFromJSON(str)
+
+	//now look for gimli in the complete listing of the telephone directory to make sure he is there
+	found := false
+	for k := range te {
+		if gimli.FirstName == te[k].FirstName {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Error("ERROR: we added ", gimli.FirstName, ", but couldnt find him in the directory! ")
+		t.FailNow()
+	}
+
+}
+
+func TestListBySurname(t *testing.T) {
+	//list all entres with "surname":"smith"
+
+	//make sure that all the entries returned have that surname
+
+	//create 2 more entries with surname "smith"
+
+	//now query for just that surname and make sure that the new ones are there
+
+	t.Error("ERROR: not implemented! ")
+	t.FailNow()
+}
 
 //try to remove an entry that doesnt exist
 //this shoudl fail with an errorcode
 func TestRemoveMissingEntry(t *testing.T) {
 	form := url.Values{}
-	form.Add("command", "remove") //update - try to update an existing one.. but where that doesnt exist - should fail	
-	//this entry doesnt exist -the IDs in the repo start from ID:137 
-	form.Add("remove", "1") 
-	_,code := sentTestRequest(form, t)	
-	if(code == 200 ) {
+	form.Add("command", "remove") //update - try to update an existing one.. but where that doesnt exist - should fail
+	//this entry doesnt exist -the IDs in the repo start from ID:137
+	form.Add("remove", "1")
+	_, code := sentTestRequest(form, t)
+	if code == 200 {
 		t.Error("ERROR got 'OK 200' from request to remove a non existing object ")
 		t.FailNow()
-	}	
+	}
 }
-
 
 //test try to update an entry that doesnt exist - should fail
 func TestUpdateMissingEntry(t *testing.T) {
 	form := url.Values{}
-	form.Add("command", "update") //update - try to update an existing one.. but where that doesnt exist - should fail	
-	js, _ := json.Marshal(TelephoneEntry{2,"baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"})
-	form.Add("update", string(js[:])) 
-	_,code := sentTestRequest(form, t)	
-	if(code == 200 ) {
+	form.Add("command", "update") //update - try to update an existing one.. but where that doesnt exist - should fail
+	js, _ := json.Marshal(TelephoneEntry{2, "baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"})
+	form.Add("update", string(js[:]))
+	_, code := sentTestRequest(form, t)
+	if code == 200 {
 		t.Error("ERROR got 'OK 200' from request to update non existing object ")
 		t.FailNow()
 	}
 }
 
-func sentTestRequest(form url.Values, t *testing.T) ([]byte, int){
+func sentTestRequest(form url.Values, t *testing.T) ([]byte, int) {
 	response, err := http.DefaultClient.PostForm("http://localhost:8084/directory", form)
-			
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +316,7 @@ func sentTestRequest(form url.Values, t *testing.T) ([]byte, int){
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("contents: ", string(contents[:]), " code: ", response.StatusCode)
+	//t.Log("contents: ", string(contents[:]), " code: ", response.StatusCode)
 	return contents, response.StatusCode
 }
 
@@ -274,5 +324,6 @@ func sentTestRequest(form url.Values, t *testing.T) ([]byte, int){
 //	TEST: Search for entries in the phone book by surname to find this entry
 //	TEST: Search for entries in the phone book by surname to find an empty set of people
 func TestSearchCreate(t *testing.T) {
+	t.Error("ERROR not implemented!")
 	t.FailNow()
 }

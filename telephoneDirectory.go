@@ -154,10 +154,10 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		}
 
 		delete(datastore, keyToRemove)
-		
+
 		break
 	default:
-		io.WriteString(w, "ooh! Questions!\n")
+		io.WriteString(w, "ooh! we didnt get any questions!\n")
 		//io.WriteString(w, req.Method) //eg "GET"
 		//look into the request to see what the query values are
 
