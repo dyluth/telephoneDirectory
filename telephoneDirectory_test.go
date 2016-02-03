@@ -172,14 +172,32 @@ func TestListAll(t *testing.T) {
 	if updatedName != retrievedName {
 		t.Error("name not changed from ", retrievedName, " to ", updatedName)
 		t.FailNow()
-	} 
-	
+	} 	
+}
 
 	//pick one and remove it
 	//confirm that the removed one is not there,
 	//and the number returned is 1 less
 	//t.FailNow() //TODO finish implementing this test!
+func TestRemoveEntry(t *testing.T) {
+	t.Error("ERROR: Test not implemented yet! ")
+	t.FailNow()
+}	
+
+//try to remove an entry that doesnt exist
+//this shoudl fail with an errorcode
+func TestRemoveMissingEntry(t *testing.T) {
+	form := url.Values{}
+	form.Add("command", "remove") //update - try to update an existing one.. but where that doesnt exist - should fail	
+	//this entry doesnt exist -the IDs in the repo start from ID:137 
+	form.Add("remove", "1") 
+	_,code := sentTestRequest(form, t)	
+	if(code == 200 ) {
+		t.Error("ERROR got 'OK 200' from request to remove a non existing object ")
+		t.FailNow()
+	}	
 }
+
 
 //test try to update an entry that doesnt exist - should fail
 func TestUpdateMissingEntry(t *testing.T) {

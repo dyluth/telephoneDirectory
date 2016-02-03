@@ -127,18 +127,22 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		//check to make sure that it exists
 		entry := LoadFromJSON([]byte(entryString))
 		
-		fmt.Println("entry string: ", entryString)
+		//fmt.Println("entry string: ", entryString)
 		
 		if _, present :=datastore[strconv.Itoa(entry.UID)]; !present {
 			//return an error if it does not exist (present will be false)
-			fmt.Println("entry doesnt exist!  ")
+			//fmt.Println("entry doesnt exist!  ")
 			w.WriteHeader(400)
 			return
 		}
 		//once found, simply replace the original with the new one..
-		datastore[strconv.Itoa(entry.UID)]=entry 		
+		//fmt.Println("loaded ", datastore[strconv.Itoa(entry.UID)])
+		datastore[strconv.Itoa(entry.UID)]=entry 
+		//fmt.Println("updated? ", datastore[strconv.Itoa(entry.UID)])
+			
 		break
 	case "remove":
+		//specify just the ID in a string
 		//the object should already exist - if not return an error
 		//remove the object from the datastore
 		break
