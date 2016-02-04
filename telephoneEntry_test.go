@@ -26,7 +26,7 @@ func TestValidate(t *testing.T) {
 		result := Validate(key)
 		if value != result {
 			t.Log("error! validating: ", key, " expected:", value, " got:", result)
-			t.Fail()
+			t.FailNow()
 		}
 	}
 }
@@ -38,14 +38,14 @@ func TestLoadArrayFronJSON(t *testing.T) {
 	bilbo := TelephoneEntry{2, "baggins", "bilbo", "393939", "bag end, Bagshot row, Hobbiton, the Shire"}
 	js, _ := json.Marshal([]TelephoneEntry{bilbo})
 	jsString := string(js[:])
-	//t.Log("marshalled entry: ", jsString)
 	te := LoadArrayFromJSON(jsString)
 	if te[0] != bilbo {
+		t.Log("marshalled entry: ", jsString)
 		t.Log("error! validating!")
 		t.Log(bilbo)
 		t.Log("is not Equal to: ")
 		t.Log(te[0])
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -59,7 +59,7 @@ func testLoadFromJSON(t *testing.T) {
 		t.Log(orig)
 		t.Log("is not the same as translation: ")
 		t.Log(newOne)
-		t.Fail()
+		t.FailNow()
 	}
 
 }

@@ -23,23 +23,8 @@ A phone book entry must contain the following details:
 	Address (optional)
 
 	JSON Format of entry:
-		{surname:"", firstname:"", phone_number:"", address:""}
-
-
-Thoughts:
-	How to uniquely identify a phonebook entry - duplicate names, addresses, - phone number should be unique.. so key off that.
-	create a PhoneBookEntry to look like url.Values - easy to encode / decode between places
-		need a validate mechanism - to ensure that th phonebookEntry has the right fields, no extras, (NOTE: Address is optional)
-
-	Store this somehow.. possibly just an interface for the moment that records in memory - use a map for the moment
-		can replace that with real store later
-	need to be able to search on surname only
-		can use a dumb brute force search initially
-
-	storing something new (create) and existing (replace) could have the same method, just if it already exists, throw away the previous one
-	removing something - should just be a map key removal
-
-	list all entries - need a way to itentify that - some sort of "all" keyword in the POST?
+		{uid:"",surname:"", firstname:"", phone_number:"", address:""}
+	where uid is an internally managed ID value used to uniquely identify a user.
 
 */
 
@@ -71,7 +56,7 @@ it also injects an element on the page to show that form data is correctly parse
 func TestServerEchoResponse(t *testing.T) {
 	testString := "test string - this should appear on the 2nd line"
 
-	t.Log("testing the server returns a value that we set here")
+	//testing the server returns a value that we set here
 	form := url.Values{}
 	form.Add("TEST_ECHO", testString)
 
@@ -80,16 +65,17 @@ func TestServerEchoResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("status: ", response.Status)
+	if response.StatusCode != 200 {
+		t.Error("ERROR: non 'ok' status code returned: ", response.Status)
+		t.FailNow()
+	}
 
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(contents[:])
-	t.Log("contents: ", s)
 	if strings.Contains(s, testString) {
-		t.Log("contents as expected")
 	} else {
 		t.Log("contents unexpected.. looking for: ", testString)
 		t.FailNow()
@@ -100,13 +86,10 @@ func TestServerEchoResponse(t *testing.T) {
 even dumber test - this just shows that a page response is created when we query it.
 */
 func TestServer(t *testing.T) {
-	//c := make(chan int)
-	//go StartServer(c)
-	fmt.Println("testing the server")
 
 	response, err := http.Get("http://localhost:8084/directory")
-	fmt.Println("we got: ", response, "and error: ", err)
 	if err != nil {
+		fmt.Println("we got: ", response, "and error: ", err)
 		t.Fatal(err)
 	}
 
@@ -138,8 +121,7 @@ func TestListAll(t *testing.T) {
 	//get the map of TelephoneEntries
 
 	te := LoadMapFromJSON(str)
-	t.Log("list value: ", te)
-
+	
 	//pick one and update it
 	//just get an arbitrary entry
 	var random TelephoneEntry
@@ -149,13 +131,13 @@ func TestListAll(t *testing.T) {
 	}
 	updatedName := "Susan"
 	random.FirstName = updatedName
-	t.Log("entry set to ", updatedName, ": ", random.UID)
+	//t.Log("entry set to ", updatedName, ": ", random.UID)
 	form = url.Values{}
-	form.Add("command", "update") //list of "" will return everyone
+	form.Add("command", "update")
 	js, _ := json.Marshal(random)
 	form.Add("update", string(js[:])) //send the command to update te[0] to have the name "susan"
 	str, _ = sentTestRequest(form, t)
-	t.Log("update to susan request: ", string(str[:]))
+	//t.Log("update to susan request: ", string(str[:]))
 
 	//list all agian, confirm that the changes have been made
 	form = url.Values{}
@@ -166,8 +148,6 @@ func TestListAll(t *testing.T) {
 	//get the map of TelephoneEntries
 	te2 := LoadMapFromJSON(str)
 	retrievedName := te2[strconv.Itoa(random.UID)].FirstName
-
-	t.Log("this had bettter be ", updatedName, " : ", retrievedName)
 
 	if updatedName != retrievedName {
 		t.Error("name not changed from ", retrievedName, " to ", updatedName)
@@ -186,10 +166,9 @@ func TestRemoveEntry(t *testing.T) {
 	form.Add("command", "list")
 	form.Add("list", "*") //list of "*" will return everyone
 	str, _ := sentTestRequest(form, t)
-	//get the map of TelephoneEntries
 
+	//get the map of TelephoneEntries
 	te := LoadMapFromJSON(str)
-	t.Log("list value: ", te)
 
 	//pick one and update it
 	//just get an arbitrary entry
@@ -200,12 +179,11 @@ func TestRemoveEntry(t *testing.T) {
 	}
 
 	form = url.Values{}
-	//list all the entries
 	form.Add("command", "remove")                //tell it that we want to remove something
 	form.Add("remove", strconv.Itoa(random.UID)) //fill in the remove field here
 	_, code := sentTestRequest(form, t)
 	if code != 200 {
-		t.Error("ERROR did not get 'OK 200' from request to remove object.  Code: ", code)
+		t.Error("ERROR did not get 'OK 200' from request to remove object: ", random.UID, "  Code: ", code)
 		t.FailNow()
 	}
 
@@ -216,11 +194,11 @@ func TestRemoveEntry(t *testing.T) {
 	form.Add("list", "*") //list of "*" will return everyone
 	str, _ = sentTestRequest(form, t)
 	te = LoadMapFromJSON(str)
-	t.Log("list value: ", te)
 	for k := range te {
 		//check to see if the ID of every Entry returned is the one we have deleted
 		if te[k].UID == random.UID {
 			//if it is, then the item wasnt really deleted, so fail the test
+			t.Log("list value: ", te)
 			t.Error("ERROR: The item ", random.UID, " was NOT deleted as we asked :( ")
 			t.FailNow()
 		}
@@ -269,9 +247,8 @@ func TestListBySurname(t *testing.T) {
 	//list all entres with "surname":"smith"
 	surname := "smith"
 	form := url.Values{}
-	//list all the entries
-	form.Add("command", "list") //list of "" will return everyone
-	form.Add("list", surname)   //list of "" will return everyone
+	form.Add("command", "list")
+	form.Add("list", surname)
 	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 
@@ -284,9 +261,6 @@ func TestListBySurname(t *testing.T) {
 			break
 		}
 	}
-
-	t.Error("ERROR: not implemented! ")
-	t.FailNow()
 }
 
 //try to remove an entry that doesnt exist
@@ -327,7 +301,6 @@ func sentTestRequest(form url.Values, t *testing.T) ([]byte, int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Log("contents: ", string(contents[:]), " code: ", response.StatusCode)
 	return contents, response.StatusCode
 }
 
@@ -336,9 +309,9 @@ func TestSearchEmpty(t *testing.T) {
 	//no-one likes gollum, so he had his name removed from the phonebook
 	surname := "gollum"
 	form := url.Values{}
-	//list all the entries
+	//list specific people with that surname
 	form.Add("command", "list")
-	form.Add("list", surname) //list of "*" will return everyone
+	form.Add("list", surname)
 	str, _ := sentTestRequest(form, t)
 	//get the map of TelephoneEntries
 	te := LoadMapFromJSON(str)

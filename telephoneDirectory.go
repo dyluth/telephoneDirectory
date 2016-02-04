@@ -107,13 +107,30 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		//if "sirname" field persent, return just that ket in an array
 		//else return whole directory set
 		//add a hardcoded response for now:
+		query := req.PostFormValue("list")
 
-		js, err := json.Marshal(datastore)
+		//create a map to return
+		var subset = make(map[string]TelephoneEntry)
+		if query == "*" { //this is asking for everything
+			subset = datastore
+		} else {
+			//just return those that match the surname
+			//using a dumb map we have to do this the hard way, switching to a real object store will fix this.
+			for k := range datastore {
+				if datastore[k].Surname == query {
+					subset[strconv.Itoa(datastore[k].UID)] = datastore[k]
+				}
+			}
+
+		}
+		js, err := json.Marshal(subset)
 		if err != nil {
 			fmt.Println("ERROR, marsheling: ", err.Error())
+			//TODO - put in the right HTML error code
 			return
 		}
 		w.Write(js)
+
 		break
 	case "create":
 		//this will create a new entry in the database with a new key
@@ -131,19 +148,13 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 		//check to make sure that it exists
 		entry := LoadFromJSON([]byte(entryString))
 
-		//fmt.Println("entry string: ", entryString)
-
 		if _, present := datastore[strconv.Itoa(entry.UID)]; !present {
 			//return an error if it does not exist (present will be false)
-			//fmt.Println("entry doesnt exist!  ")
 			w.WriteHeader(400)
 			return
 		}
 		//once found, simply replace the original with the new one..
-		//fmt.Println("loaded ", datastore[strconv.Itoa(entry.UID)])
 		datastore[strconv.Itoa(entry.UID)] = entry
-		//fmt.Println("updated? ", datastore[strconv.Itoa(entry.UID)])
-
 		break
 	case "remove":
 		//specify just the ID in a string
@@ -161,25 +172,12 @@ func DirectoryServer(w http.ResponseWriter, req *http.Request) {
 
 		break
 	default:
+		//this is a default output just incase any of the other queries are not used.
+		//handy to point a browser at to see the service is up.
 		io.WriteString(w, "ooh! we didnt get any questions!\n")
-		//io.WriteString(w, req.Method) //eg "GET"
-		//look into the request to see what the query values are
-
-		//req.ParseForm()
-
 		if req.PostFormValue("TEST_ECHO") != "" {
 			io.WriteString(w, req.PostFormValue("TEST_ECHO"))
 		}
 	}
 
-	/*
-		js, err := json.Marshal(result)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-
-		w.Write(js)
-	*/
 }
